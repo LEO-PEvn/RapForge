@@ -109,3 +109,64 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.app-shell {
+  width: 100%;
+}
+
+.app-shell .app-container {
+  width: 100%;
+}
+
+.app-shell .header-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .app-shell .app-container {
+    padding: 28px 16px 60px;
+  }
+
+  .app-shell .header-buttons {
+    position: static !important;
+    margin: 0 auto 24px;
+    justify-content: center;
+  }
+
+  .app-shell .artist-pills,
+  .app-shell .vibe-pills {
+    justify-content: center;
+  }
+
+  .app-shell .artist-pills > button,
+  .app-shell .vibe-pills > button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .app-shell .mode-row {
+    flex-direction: column !important;
+  }
+
+  .app-shell .mode-row > button {
+    width: 100%;
+  }
+
+  .app-shell input[type="range"],
+  .app-shell select,
+  .app-shell input[type="text"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-shell button {
+    min-width: 0;
+  }
+
+  .app-shell pre {
+    font-size: 12px;
+  }
+}

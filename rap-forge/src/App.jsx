@@ -590,14 +590,14 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: rootBg, color: textColor, fontFamily: "'Courier New', monospace" }}>
+    <div className="app-shell" style={{ minHeight: "100vh", background: rootBg, color: textColor, fontFamily: "'Courier New', monospace" }}>
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${C} 30%,${C} 70%,transparent)`, zIndex: 10 }} />
 
-      <div style={{ maxWidth: 740, margin: "0 auto", padding: "52px 20px 100px", position: "relative" }}>
+      <div className="app-container" style={{ maxWidth: 740, margin: "0 auto", padding: "52px 20px 100px", position: "relative" }}>
 
         {/* HEADER */}
         <div style={{ textAlign: "center", marginBottom: 52 }}>
-          <div style={{ position: "absolute", top: 20, right: 20 }}>
+          <div className="header-buttons" style={{ position: "absolute", top: 20, right: 20 }}>
             <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: `1px solid ${border}`, color: softText, padding: "6px 12px", fontSize: 10, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
               {darkMode ? "☀️ LIGHT" : "🌙 DARK"}</button>
             <button onClick={() => setShowHistory(!showHistory)} style={{ background: "none", border: `1px solid ${border}`, color: softText, padding: "6px 12px", fontSize: 10, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase", marginLeft: 8 }}>
@@ -642,7 +642,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
           </div>
 
           {/* Artist pills */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+          <div className="artist-pills" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
             {list.map((a) => (
               <button key={a.id} onClick={() => pickArtist(a)} style={pill(artist.id === a.id)}>
                 {a.flag} {a.name}
@@ -694,7 +694,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         {/* 03 — VIBE */}
         <div style={{ marginBottom: 28 }}>
           <label style={lbl}>03 — Vibe</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div className="vibe-pills" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {VIBES.map((v) => (
               <button key={v} onClick={() => setVibe(v)} style={{ padding: "8px 14px", fontSize: 11, fontFamily: "inherit", cursor: "pointer", border: vibe === v ? `1px solid ${C}` : `1px solid ${border}`, background: vibe === v ? "#1a0800" : panel, color: vibe === v ? C : softText, transition: "all 0.15s" }}>
                 {v}
@@ -713,7 +713,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         {/* 04 — MODE */}
         <div style={{ marginBottom: 28 }}>
           <label style={lbl}>04 — Generation Mode</label>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div className="mode-row" style={{ display: "flex", gap: 12 }}>
             <button onClick={() => setMode("quick")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "quick" ? highlightBg : panel, color: mode === "quick" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
             <button onClick={() => setMode("advanced")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "advanced" ? highlightBg : panel, color: mode === "advanced" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
           </div>
