@@ -6,13 +6,13 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       },
-     body: JSON.stringify({
-  ...req.body,
-  model: "llama-3.3-70b-versatile",
-}),
+      body: JSON.stringify({
+        ...req.body,
+        model: "llama-3.3-70b-versatile",
+      }),
     });
     const data = await response.json();
-    console.log("Groq response:", JSON.stringify(data));
+    console.log("Groq response:", JSON.stringify(data).slice(0, 200));
     const text = data.choices[0].message.content;
     res.json({ content: [{ text }] });
   } catch (err) {

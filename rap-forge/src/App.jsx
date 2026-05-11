@@ -370,6 +370,9 @@ export default function App() {
   const [loadingMsg, setLoadingMsg] = useState("WRITING BARS...");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [editingLine, setEditingLine] = useState(null);
+  const [editSuggestions, setEditSuggestions] = useState([]);
+  const [editLoading, setEditLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const lyricsRef = useRef(null);
 
@@ -473,6 +476,39 @@ You are a professional rap editor. Identify the 3 weakest bars (generic, cliché
   }
   setLoading(false);
 };
+  const rewriteLine = async (lineIndex, lineText) => {
+    setEditingLine(lineIndex);
+    setEditSuggestions([]);
+    setEditLoading(true);
+    const count = mode === "advanced" ? 3 : 1;
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 200,
+        temperature: temperature,
+        messages: [{ role: "user", content: `You are writing in the style of ${artist.name}. Rewrite this lyric line ${count} different way${count > 1 ? "s" : ""}, each more powerful and original. Line: "${lineText}"
+
+Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3." : ""} No explanation.` }],
+      }),
+    });
+    const data = await res.json();
+    const text = data.content[0].text;
+    const suggestions = mode === "advanced"
+      ? text.split("\n").filter(l => l.trim()).slice(0, 3)
+      : [text.trim()];
+    setEditSuggestions(suggestions);
+    setEditLoading(false);
+  };
+
+  const applyEdit = (lineIndex, newLine) => {
+    const lines = lyrics.split("\n");
+    lines[lineIndex] = newLine.replace(/^\d+\.\s*/, "");
+    setLyrics(lines.join("\n"));
+    setEditingLine(null);
+    setEditSuggestions([]);
+  };
   const copy = () => {
     navigator.clipboard.writeText(lyrics);
     setCopied(true);
@@ -666,9 +702,36 @@ You are a professional rap editor. Identify the 3 weakest bars (generic, cliché
               <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 2, fontSize: 13, color: "#ddd", fontFamily: "'Courier New', monospace" }}>
                 {lyrics.split("\n").map((line, i) => {
                   const isLabel = /^\[.+\]$/.test(line.trim());
+                  const isEditing = editingLine === i;
                   return (
                     <span key={i} style={{ display: "block", color: isLabel ? C : "#ddd", fontWeight: isLabel ? 700 : 400, marginTop: isLabel ? 20 : 0, letterSpacing: isLabel ? 3 : 0.3, fontSize: isLabel ? 10 : 13 }}>
-                      {line || " "}
+                      {!isLabel && !isEditing && line && (
+                        <span
+                          onClick={() => rewriteLine(i, line)}
+                          title="Click to rewrite this line"
+                          style={{ cursor: "pointer", borderBottom: "1px dashed #333", transition: "all 0.15s" }}
+                          onMouseEnter={e => e.target.style.borderBottomColor = C}
+                          onMouseLeave={e => e.target.style.borderBottomColor = "#333"}
+                        >
+                          {line}
+                        </span>
+                      )}
+                      {!isLabel && isEditing && (
+                        <span>
+                          {editLoading && <span style={{ color: C, fontSize: 10 }}>✦ REWRITING...</span>}
+                          {!editLoading && editSuggestions.map((s, j) => (
+                            <span key={j} style={{ display: "block", cursor: "pointer", color: "#aaa", borderLeft: `2px solid ${C}`, paddingLeft: 10, marginBottom: 6 }}
+                              onClick={() => applyEdit(i, s)}
+                              onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+                              onMouseLeave={e => e.currentTarget.style.color = "#aaa"}
+                            >
+                              {s}
+                            </span>
+                          ))}
+                          <span onClick={() => { setEditingLine(null); setEditSuggestions([]); }} style={{ fontSize: 9, color: "#444", cursor: "pointer", letterSpacing: 2 }}>✕ CANCEL</span>
+                        </span>
+                      )}
+                      {(isLabel || !line) && (line || " ")}
                     </span>
                   );
                 })}
