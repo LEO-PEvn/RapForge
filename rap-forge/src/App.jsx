@@ -364,6 +364,10 @@ export default function App() {
   const [language, setLanguage] = useState("English");
   const [vibe, setVibe] = useState(VIBES[0]);
   const [temperature, setTemperature] = useState(0.85);
+  const [darkMode, setDarkMode] = useState(true);
+  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem("rapforge_history") || "[]"));
+  const [showHistory, setShowHistory] = useState(false);
+  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem("rapforge_favorites") || "[]"));
   const [mode, setMode] = useState("quick");
   const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
@@ -391,6 +395,18 @@ export default function App() {
   };
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const saveToHistory = (text) => {
+    const entry = { id: Date.now(), artist: artist.name, topic, language, vibe, lyrics: text, date: new Date().toLocaleDateString() };
+    const updated = [entry, ...history].slice(0, 10);
+    setHistory(updated);
+    localStorage.setItem("rapforge_history", JSON.stringify(updated));
+  };
+  const toggleFavorite = (line) => {
+    const exists = favorites.includes(line);
+    const updated = exists ? favorites.filter(f => f !== line) : [...favorites, line];
+    setFavorites(updated);
+    localStorage.setItem("rapforge_favorites", JSON.stringify(updated));
+  };
   const generate = async () => {
   if (!topic.trim()) return;
   setLoading(true);
@@ -468,7 +484,7 @@ You are a professional rap editor. Identify the 3 weakest bars (generic, cliché
       });
       const finalData = await step3.json();
       const finalText = finalData.content[0].text;
-      setLyrics(finalText || text);
+      setLyrics(finalText || text); saveToHistory(finalText || text);
     }
     setTimeout(() => lyricsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   } catch {
@@ -515,35 +531,85 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const pill = (on) => ({
-    padding: "7px 13px", fontSize: 10, letterSpacing: 1,
-    fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase",
-    border: on ? `1px solid ${C}` : "1px solid #1e1e1e",
-    background: on ? C : "#0d0d0d",
-    color: on ? "#000" : "#666",
-    fontWeight: on ? 700 : 400,
-    transition: "all 0.15s",
-  });
+  const splitLyricsIntoSentenceEntries = (text) => {
+    const entries = [];
+    let sentenceCount = 0;
+    text.split("\n").forEach((rawLine, originalLineIndex) => {
+      const trimmed = rawLine.trim();
+      const isLabel = /^\[.+\]$/.test(trimmed);
+      if (isLabel || trimmed === "") {
+        entries.push({ text: rawLine, isLabel, originalLineIndex, number: null, rawLine });
+        return;
+      }
+
+      const segments = rawLine.match(/[^.!?]+[.!?]+["']?(\s+|$)|[^.!?]+$/g) || [rawLine];
+      segments.forEach((segment) => {
+        const sentence = segment.replace(/\s+$/g, "");
+        if (!sentence) return;
+        sentenceCount += 1;
+        entries.push({ text: sentence, isLabel: false, originalLineIndex, number: sentenceCount, rawLine });
+      });
+    });
+
+    let normalizedCount = 0;
+    return entries.map((entry) => {
+      if (entry.number == null) return entry;
+      normalizedCount += 1;
+      return { ...entry, number: normalizedCount };
+    });
+  };
 
   const lbl = {
     fontSize: 10, letterSpacing: 4, color: C,
     display: "block", marginBottom: 10, textTransform: "uppercase",
   };
 
+  const rootBg = darkMode ? "#080808" : "#f3efe8";
+  const surface = darkMode ? "#0a0a0a" : "#f7efe6";
+  const panel = darkMode ? "#0d0d0d" : "#fff8f0";
+  const border = darkMode ? "#1a1a1a" : "#d3bfae";
+  const textColor = darkMode ? "#fff" : "#111";
+  const softText = darkMode ? "#555" : "#5e5446";
+  const captionText = darkMode ? "#3a3a3a" : "#6a5f52";
+  const inputBg = darkMode ? "#0d0d0d" : "#f5ede3";
+  const panelText = darkMode ? "#ddd" : "#2b2520";
+  const hoverBg = darkMode ? "#111" : "#e7dacd";
+
+  const highlightBg = darkMode ? C : "#1a0800";
+  const highlightText = darkMode ? "#000" : C;
+  const secondaryBg = darkMode ? "#0d0d0d" : panel;
+
+  const pill = (on) => ({
+    padding: "7px 13px", fontSize: 10, letterSpacing: 1,
+    fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase",
+    border: on ? `1px solid ${C}` : `1px solid ${border}`,
+    background: on ? highlightBg : secondaryBg,
+    color: on ? highlightText : softText,
+    fontWeight: on ? 700 : 400,
+    transition: "all 0.15s",
+  });
+
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", color: "#fff", fontFamily: "'Courier New', monospace" }}>
+    <div style={{ minHeight: "100vh", background: rootBg, color: textColor, fontFamily: "'Courier New', monospace" }}>
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${C} 30%,${C} 70%,transparent)`, zIndex: 10 }} />
 
-      <div style={{ maxWidth: 740, margin: "0 auto", padding: "52px 20px 100px" }}>
+      <div style={{ maxWidth: 740, margin: "0 auto", padding: "52px 20px 100px", position: "relative" }}>
 
         {/* HEADER */}
         <div style={{ textAlign: "center", marginBottom: 52 }}>
+          <div style={{ position: "absolute", top: 20, right: 20 }}>
+            <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: `1px solid ${border}`, color: softText, padding: "6px 12px", fontSize: 10, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
+              {darkMode ? "☀️ LIGHT" : "🌙 DARK"}</button>
+            <button onClick={() => setShowHistory(!showHistory)} style={{ background: "none", border: `1px solid ${border}`, color: softText, padding: "6px 12px", fontSize: 10, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase", marginLeft: 8 }}>
+              📋 HISTORY ({history.length})
+            </button>
+          </div>
           <div style={{ fontSize: 10, letterSpacing: 8, color: C, marginBottom: 10 }}>AI-POWERED · ARTIST DNA · STYLE EXAMPLES</div>
           <div style={{ fontSize: "clamp(3rem,9vw,5.5rem)", fontWeight: 900, lineHeight: 0.85, letterSpacing: -3, textTransform: "uppercase" }}>
-            <div style={{ color: "#fff" }}>RAP</div>
+            <div style={{ color: textColor }}>RAP</div>
             <div style={{ color: C }}>FORGE</div>
           </div>
-          <div style={{ color: "#3a3a3a", fontSize: 11, letterSpacing: 3, marginTop: 14 }}>
+          <div style={{ color: captionText, fontSize: 11, letterSpacing: 3, marginTop: 14 }}>
             25 ARTISTS · 250+ SONGS · 100 STYLE EXAMPLES · ANY LANGUAGE
           </div>
         </div>
@@ -556,9 +622,9 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
             onChange={(e) => setTopic(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && generate()}
             placeholder="travel and never come back, heartbreak, rising from nothing..."
-            style={{ width: "100%", background: "#0d0d0d", border: "1px solid #1e1e1e", color: "#fff", padding: "14px 16px", fontSize: 14, fontFamily: "inherit", outline: "none", letterSpacing: 1 }}
+            style={{ width: "100%", background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "14px 16px", fontSize: 14, fontFamily: "inherit", outline: "none", letterSpacing: 1 }}
             onFocus={(e) => (e.target.style.borderColor = C)}
-            onBlur={(e) => (e.target.style.borderColor = "#1e1e1e")}
+            onBlur={(e) => (e.target.style.borderColor = border)}
           />
         </div>
 
@@ -567,9 +633,9 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
           <label style={lbl}>02 — Artist Style</label>
 
           {/* Tabs */}
-          <div style={{ display: "flex", borderBottom: "1px solid #1a1a1a", marginBottom: 14 }}>
+          <div style={{ display: "flex", borderBottom: `1px solid ${border}`, marginBottom: 14 }}>
             {[["INT", "🌍 International"], ["FR", "🇫🇷 Français"]].map(([k, l]) => (
-              <button key={k} onClick={() => switchTab(k)} style={{ padding: "10px 20px", fontSize: 10, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: "none", borderBottom: tab === k ? `2px solid ${C}` : "2px solid transparent", background: "transparent", color: tab === k ? C : "#444", fontWeight: tab === k ? 700 : 400, textTransform: "uppercase", marginBottom: -1 }}>
+              <button key={k} onClick={() => switchTab(k)} style={{ padding: "10px 20px", fontSize: 10, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: "none", borderBottom: tab === k ? `2px solid ${C}` : "2px solid transparent", background: "transparent", color: tab === k ? C : softText, fontWeight: tab === k ? 700 : 400, textTransform: "uppercase", marginBottom: -1 }}>
                 {l}
               </button>
             ))}
@@ -586,36 +652,36 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
 
           {/* Meta + profile toggle */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <div style={{ fontSize: 10, color: "#3a3a3a", letterSpacing: 2 }}>◈ {getArtistMeta(artist)}</div>
-            <button onClick={() => setProfileOpen(!profileOpen)} style={{ background: "none", border: "1px solid #1a1a1a", color: "#444", padding: "4px 10px", fontSize: 9, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 10, color: captionText, letterSpacing: 2 }}>◈ {getArtistMeta(artist)}</div>
+            <button onClick={() => setProfileOpen(!profileOpen)} style={{ background: "none", border: `1px solid ${border}`, color: softText, padding: "4px 10px", fontSize: 9, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
               {profileOpen ? "HIDE ▴" : "PROFILE ▾"}
             </button>
           </div>
 
           {/* Profile panel */}
           {profileOpen && (
-            <div style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderLeft: `2px solid ${C}`, padding: 20, marginTop: 10 }}>
+            <div style={{ background: surface, border: `1px solid ${border}`, borderLeft: `2px solid ${C}`, padding: 20, marginTop: 10 }}>
               <div style={{ fontSize: 10, color: C, letterSpacing: 3, marginBottom: 14, textTransform: "uppercase" }}>
                 {artist.flag} {artist.name} — Knowledge Base
               </div>
-              <div style={{ fontSize: 11, color: "#555", lineHeight: 1.8, display: "grid", gap: 10 }}>
-                <div><span style={{ color: "#333" }}>THEMES · </span>{artist.coreThemes.slice(0, 4).join("  ·  ")}</div>
-                <div><span style={{ color: "#333" }}>FLOW · </span>{artist.flowType}</div>
-                <div><span style={{ color: "#333" }}>LITERARY DEVICES · </span>{artist.literaryDevices.join("  ·  ")}</div>
+              <div style={{ fontSize: 11, color: softText, lineHeight: 1.8, display: "grid", gap: 10 }}>
+                <div><span style={{ color: captionText }}>THEMES · </span>{artist.coreThemes.slice(0, 4).join("  ·  ")}</div>
+                <div><span style={{ color: captionText }}>FLOW · </span>{artist.flowType}</div>
+                <div><span style={{ color: captionText }}>LITERARY DEVICES · </span>{artist.literaryDevices.join("  ·  ")}</div>
                 <div>
-                  <div style={{ color: "#333", marginBottom: 6 }}>REFERENCE SONGS ({artist.referenceSongs.length})</div>
+                  <div style={{ color: captionText, marginBottom: 6 }}>REFERENCE SONGS ({artist.referenceSongs.length})</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {artist.referenceSongs.map((s) => (
-                      <span key={s.title} title={s.note} style={{ fontSize: 9, padding: "3px 8px", border: "1px solid #1a1a1a", color: "#444", letterSpacing: 1 }}>
+                      <span key={s.title} title={s.note} style={{ fontSize: 9, padding: "3px 8px", border: `1px solid ${border}`, color: softText, letterSpacing: 1 }}>
                         {s.title} · {s.bpm}bpm
                       </span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: "#333", marginBottom: 6 }}>STYLE EXAMPLES ({artist.styleExamples.length})</div>
+                  <div style={{ color: captionText, marginBottom: 6 }}>STYLE EXAMPLES ({artist.styleExamples.length})</div>
                   {artist.styleExamples.map((ex, i) => (
-                    <div key={i} style={{ fontSize: 10, color: "#444", borderLeft: `1px solid ${C}`, paddingLeft: 10, marginBottom: 8, lineHeight: 1.7, fontStyle: "italic", whiteSpace: "pre-line" }}>
+                    <div key={i} style={{ fontSize: 10, color: softText, borderLeft: `1px solid ${C}`, paddingLeft: 10, marginBottom: 8, lineHeight: 1.7, fontStyle: "italic", whiteSpace: "pre-line" }}>
                       {ex}
                     </div>
                   ))}
@@ -630,7 +696,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
           <label style={lbl}>03 — Vibe</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {VIBES.map((v) => (
-              <button key={v} onClick={() => setVibe(v)} style={{ padding: "8px 14px", fontSize: 11, fontFamily: "inherit", cursor: "pointer", border: vibe === v ? `1px solid ${C}` : "1px solid #1a1a1a", background: vibe === v ? "#1a0800" : "#0d0d0d", color: vibe === v ? C : "#555", transition: "all 0.15s" }}>
+              <button key={v} onClick={() => setVibe(v)} style={{ padding: "8px 14px", fontSize: 11, fontFamily: "inherit", cursor: "pointer", border: vibe === v ? `1px solid ${C}` : `1px solid ${border}`, background: vibe === v ? "#1a0800" : panel, color: vibe === v ? C : softText, transition: "all 0.15s" }}>
                 {v}
               </button>
             ))}
@@ -640,7 +706,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         {/* 04 — LANGUAGE */}
         <div style={{ marginBottom: 28 }}>
           <label style={lbl}>04 — Language</label>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", color: "#fff", padding: "12px 16px", fontSize: 12, fontFamily: "inherit", outline: "none", width: "100%", cursor: "pointer", letterSpacing: 1 }}>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "12px 16px", fontSize: 12, fontFamily: "inherit", outline: "none", width: "100%", cursor: "pointer", letterSpacing: 1 }}>
             {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
@@ -648,10 +714,10 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         <div style={{ marginBottom: 28 }}>
           <label style={lbl}>04 — Generation Mode</label>
           <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={() => setMode("quick")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? "1px solid #ff3c00" : "1px solid #1a1a1a", background: mode === "quick" ? "#1a0800" : "#0d0d0d", color: mode === "quick" ? "#ff3c00" : "#555", textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
-            <button onClick={() => setMode("advanced")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? "1px solid #ff3c00" : "1px solid #1a1a1a", background: mode === "advanced" ? "#1a0800" : "#0d0d0d", color: mode === "advanced" ? "#ff3c00" : "#555", textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
+            <button onClick={() => setMode("quick")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "quick" ? highlightBg : panel, color: mode === "quick" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
+            <button onClick={() => setMode("advanced")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "advanced" ? highlightBg : panel, color: mode === "advanced" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
           </div>
-          {mode === "advanced" && <div style={{ fontSize: 10, color: "#555", letterSpacing: 1, marginTop: 8 }}>Two-step generation — concept outline first, then lyrics. Slower but more coherent.</div>}
+          {mode === "advanced" && <div style={{ fontSize: 10, color: softText, letterSpacing: 1, marginTop: 8 }}>Two-step generation — concept outline first, then lyrics. Slower but more coherent.</div>}
         </div>
 
 
@@ -659,7 +725,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
 <div style={{ marginBottom: 28 }}>
   <label style={lbl}>04 — Creativity</label>
   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-    <span style={{ fontSize: 10, color: "#555", letterSpacing: 2 }}>SAFE</span>
+    <span style={{ fontSize: 10, color: softText, letterSpacing: 2 }}>SAFE</span>
     <input
       type="range"
       min="0.1"
@@ -669,7 +735,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
       onChange={(e) => setTemperature(parseFloat(e.target.value))}
       style={{ flex: 1, accentColor: "#ff3c00" }}
     />
-    <span style={{ fontSize: 10, color: "#555", letterSpacing: 2 }}>WILD</span>
+    <span style={{ fontSize: 10, color: softText, letterSpacing: 2 }}>WILD</span>
     <span style={{ fontSize: 12, color: "#ff3c00", minWidth: 30 }}>{temperature}</span>
   </div>
 </div>
@@ -678,7 +744,7 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         <button
           onClick={generate}
           disabled={loading || !topic.trim()}
-          style={{ padding: 18, fontSize: 12, letterSpacing: 4, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", width: "100%", cursor: loading || !topic.trim() ? "not-allowed" : "pointer", background: loading || !topic.trim() ? "#111" : C, color: loading || !topic.trim() ? "#333" : "#000", border: "none", transition: "all 0.2s" }}
+          style={{ padding: 18, fontSize: 12, letterSpacing: 4, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", width: "100%", cursor: loading || !topic.trim() ? "not-allowed" : "pointer", background: loading || !topic.trim() ? (darkMode ? "#111" : "#ddd") : C, color: loading || !topic.trim() ? (darkMode ? "#333" : "#666") : "#000", border: "none", transition: "all 0.2s" }}
         >
           {loading
             ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>◌</span>{loadingMsg}</span>
@@ -687,6 +753,17 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
 
         {error && <div style={{ marginTop: 16, color: C, fontSize: 12, textAlign: "center" }}>{error}</div>}
 
+        {showHistory && history.length > 0 && (
+          <div style={{ marginTop: 48, background: surface, border: `1px solid ${border}`, padding: 24 }}>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: C, marginBottom: 16 }}>📋 HISTORY — LAST {history.length} GENERATIONS</div>
+            {history.map((h) => (
+              <div key={h.id} onClick={() => { setLyrics(h.lyrics); setShowHistory(false); }} style={{ padding: "12px 16px", borderBottom: `1px solid ${border}`, cursor: "pointer", marginBottom: 4 }} onMouseEnter={e => e.currentTarget.style.background = hoverBg} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <div style={{ fontSize: 11, color: C }}>{h.artist} — {h.topic}</div>
+                <div style={{ fontSize: 9, color: softText, letterSpacing: 2, marginTop: 4 }}>{h.language} · {h.vibe} · {h.date}</div>
+              </div>
+            ))}
+          </div>
+        )}
         {/* LYRICS OUTPUT */}
         {lyrics && (
           <div ref={lyricsRef} style={{ marginTop: 48 }}>
@@ -694,41 +771,45 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
               <div style={{ fontSize: 9, letterSpacing: 3, color: C }}>
                 ✦ {artist.name.toUpperCase()} · {language.toUpperCase()} · {vibe.replace(/^\S+\s/, "").toUpperCase()} · {artist.typicalBpm} BPM
               </div>
-              <button onClick={copy} style={{ background: "none", border: "1px solid #1a1a1a", color: copied ? C : "#444", padding: "5px 12px", fontSize: 9, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
+              <button onClick={copy} style={{ background: "none", border: `1px solid ${border}`, color: copied ? C : softText, padding: "5px 12px", fontSize: 9, letterSpacing: 2, fontFamily: "inherit", cursor: "pointer", textTransform: "uppercase" }}>
                 {copied ? "✓ COPIED" : "COPY"}
               </button>
             </div>
-            <div style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderLeft: `3px solid ${C}`, padding: 32 }}>
-              <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 2, fontSize: 13, color: "#ddd", fontFamily: "'Courier New', monospace" }}>
-                {lyrics.split("\n").map((line, i) => {
-                  const isLabel = /^\[.+\]$/.test(line.trim());
-                  const isEditing = editingLine === i;
+            <div style={{ background: surface, border: `1px solid ${border}`, borderLeft: `3px solid ${C}`, padding: 32 }}>
+              <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 2, fontSize: 13, color: panelText, fontFamily: "'Courier New', monospace" }}>
+                {splitLyricsIntoSentenceEntries(lyrics).map((entry, i) => {
+                  const isLabel = entry.isLabel;
+                  const line = entry.text;
+                  const isEditing = editingLine === entry.originalLineIndex;
                   return (
-                    <span key={i} style={{ display: "block", color: isLabel ? C : "#ddd", fontWeight: isLabel ? 700 : 400, marginTop: isLabel ? 20 : 0, letterSpacing: isLabel ? 3 : 0.3, fontSize: isLabel ? 10 : 13 }}>
-                      {!isLabel && !isEditing && line && (
+<span key={`${entry.originalLineIndex}-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 12, color: isLabel ? C : "#ddd", fontWeight: isLabel ? 700 : 400, marginTop: isLabel ? 20 : 0, letterSpacing: isLabel ? 3 : 0.3, fontSize: isLabel ? 10 : 13 }}>
+  {!isLabel && line && <span style={{ minWidth: 24, color: "#333", fontSize: 10, paddingTop: 2, userSelect: "none", textAlign: "right" }}>{entry.number}</span>}
+  {isLabel && <span style={{ minWidth: 24 }}></span>}                      {!isLabel && !isEditing && line && (
                         <span
-                          onClick={() => rewriteLine(i, line)}
+                          onClick={() => rewriteLine(entry.originalLineIndex, entry.rawLine)}
                           title="Click to rewrite this line"
                           style={{ cursor: "pointer", borderBottom: "1px dashed #333", transition: "all 0.15s" }}
                           onMouseEnter={e => e.target.style.borderBottomColor = C}
                           onMouseLeave={e => e.target.style.borderBottomColor = "#333"}
                         >
-                          {line}
-                        </span>
-                      )}
+{line}
+                          <span onClick={(e) => { e.stopPropagation(); toggleFavorite(entry.rawLine); }} style={{ marginLeft: 8, cursor: "pointer", fontSize: 12, opacity: favorites.includes(entry.rawLine) ? 1 : 0.2 }} title="Favorite">
+                            {favorites.includes(entry.rawLine) ? "❤️" : "🤍"}
+                          </span>
+                        </span>                      )}
                       {!isLabel && isEditing && (
                         <span>
                           {editLoading && <span style={{ color: C, fontSize: 10 }}>✦ REWRITING...</span>}
                           {!editLoading && editSuggestions.map((s, j) => (
-                            <span key={j} style={{ display: "block", cursor: "pointer", color: "#aaa", borderLeft: `2px solid ${C}`, paddingLeft: 10, marginBottom: 6 }}
-                              onClick={() => applyEdit(i, s)}
-                              onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                              onMouseLeave={e => e.currentTarget.style.color = "#aaa"}
+                            <span key={j} style={{ display: "block", cursor: "pointer", color: softText, borderLeft: `2px solid ${C}`, paddingLeft: 10, marginBottom: 6 }}
+                              onClick={() => applyEdit(entry.originalLineIndex, s)}
+                              onMouseEnter={e => e.currentTarget.style.color = darkMode ? "#fff" : "#111"}
+                              onMouseLeave={e => e.currentTarget.style.color = softText}
                             >
                               {s}
                             </span>
                           ))}
-                          <span onClick={() => { setEditingLine(null); setEditSuggestions([]); }} style={{ fontSize: 9, color: "#444", cursor: "pointer", letterSpacing: 2 }}>✕ CANCEL</span>
+                          <span onClick={() => { setEditingLine(null); setEditSuggestions([]); }} style={{ fontSize: 9, color: softText, cursor: "pointer", letterSpacing: 2 }}>✕ CANCEL</span>
                         </span>
                       )}
                       {(isLabel || !line) && (line || " ")}
