@@ -363,6 +363,7 @@ export default function App() {
   const [artist, setArtist] = useState(ARTISTS_INTERNATIONAL[0]);
   const [language, setLanguage] = useState("English");
   const [vibe, setVibe] = useState(VIBES[0]);
+  const [temperature, setTemperature] = useState(0.85);
   const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -400,6 +401,7 @@ const generate = async () => {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         max_tokens: 1400,
+        temperature: temperature,
         messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) }],
       }),
     });
@@ -549,6 +551,25 @@ const generate = async () => {
             {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
+
+        {/* 04 — TEMPERATURE */}
+<div style={{ marginBottom: 28 }}>
+  <label style={lbl}>04 — Creativity</label>
+  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+    <span style={{ fontSize: 10, color: "#555", letterSpacing: 2 }}>SAFE</span>
+    <input
+      type="range"
+      min="0.1"
+      max="1.5"
+      step="0.05"
+      value={temperature}
+      onChange={(e) => setTemperature(parseFloat(e.target.value))}
+      style={{ flex: 1, accentColor: "#ff3c00" }}
+    />
+    <span style={{ fontSize: 10, color: "#555", letterSpacing: 2 }}>WILD</span>
+    <span style={{ fontSize: 12, color: "#ff3c00", minWidth: 30 }}>{temperature}</span>
+  </div>
+</div>
 
         {/* GENERATE BUTTON */}
         <button
