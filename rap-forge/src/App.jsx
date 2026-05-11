@@ -364,8 +364,10 @@ export default function App() {
   const [language, setLanguage] = useState("English");
   const [vibe, setVibe] = useState(VIBES[0]);
   const [temperature, setTemperature] = useState(0.85);
+  const [mode, setMode] = useState("quick");
   const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("WRITING BARS...");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -385,37 +387,92 @@ export default function App() {
     setProfileOpen(false);
   };
 
-const generate = async () => {
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const generate = async () => {
   if (!topic.trim()) return;
   setLoading(true);
   setLyrics("");
   setError("");
   setProfileOpen(false);
   try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 1400,
-        temperature: temperature,
-        messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) }],
-      }),
-    });
-    const data = await res.json();
-    const text = data.content[0].text;
-    if (!text) throw new Error("Empty response");
-    setLyrics(text);
+    if (mode === "quick") {
+      // QUICK MODE — single call
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 1400,
+          temperature: temperature,
+          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content[0].text;
+      if (!text) throw new Error("Empty response");
+      setLyrics(text);
+    } else {
+      // ADVANCED MODE — two calls
+      setLoadingMsg("🎯 BUILDING CONCEPT..."); await sleep(50);// Step 1: Generate concept outline
+      const step1 = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 400,
+          temperature: 0.7,
+          messages: [{ role: "user", content: `You are a rap songwriter. For the topic "${topic}" in the style of ${artist.name}, write a brief concept outline (4-6 lines max):
+- Main theme and emotional arc
+- Key metaphor or image
+- Hook concept (one line)
+- Verse 1 focus
+- Verse 2 focus
+Output ONLY the outline, no preamble.` }],
+        }),
+      });
+      const outline = await step1.json();
+      const outlineText = outline.content[0].text;
+
+      setLoadingMsg("✍️ WRITING BARS..."); await sleep(50);// Step 2: Write lyrics based on outline
+      const step2 = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 1400,
+          temperature: temperature,
+          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) + `\n\nFOLLOW THIS CONCEPT OUTLINE:\n${outlineText}` }],
+        }),
+      });
+      const data = await step2.json();
+      const text = data.content[0].text;
+      if (!text) throw new Error("Empty response");
+      // Step 3: Self-critique and rewrite
+      setLoadingMsg("🔥 PERFECTING BARS..."); await sleep(50);
+      const step3 = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 1600,
+          temperature: temperature,
+          messages: [{ role: "user", content: `These are AI-generated lyrics in the style of ${artist.name}:
+
+${text}
+
+You are a professional rap editor. Identify the 3 weakest bars (generic, cliché, or off-rhythm) and rewrite ONLY those bars to be more powerful, original and authentic to ${artist.name}'s style. Output the COMPLETE lyrics with the improvements integrated. No commentary, no explanations, just the final lyrics.` }],
+        }),
+      });
+      const finalData = await step3.json();
+      const finalText = finalData.content[0].text;
+      setLyrics(finalText || text);
+    }
     setTimeout(() => lyricsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   } catch {
     setError("Generation failed — check your connection and try again.");
   }
   setLoading(false);
 };
-
   const copy = () => {
     navigator.clipboard.writeText(lyrics);
     setCopied(true);
@@ -551,6 +608,16 @@ const generate = async () => {
             {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
+        {/* 04 — MODE */}
+        <div style={{ marginBottom: 28 }}>
+          <label style={lbl}>04 — Generation Mode</label>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={() => setMode("quick")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? "1px solid #ff3c00" : "1px solid #1a1a1a", background: mode === "quick" ? "#1a0800" : "#0d0d0d", color: mode === "quick" ? "#ff3c00" : "#555", textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
+            <button onClick={() => setMode("advanced")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? "1px solid #ff3c00" : "1px solid #1a1a1a", background: mode === "advanced" ? "#1a0800" : "#0d0d0d", color: mode === "advanced" ? "#ff3c00" : "#555", textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
+          </div>
+          {mode === "advanced" && <div style={{ fontSize: 10, color: "#555", letterSpacing: 1, marginTop: 8 }}>Two-step generation — concept outline first, then lyrics. Slower but more coherent.</div>}
+        </div>
+
 
         {/* 04 — TEMPERATURE */}
 <div style={{ marginBottom: 28 }}>
@@ -560,7 +627,7 @@ const generate = async () => {
     <input
       type="range"
       min="0.1"
-      max="1.5"
+      max="2.0"
       step="0.05"
       value={temperature}
       onChange={(e) => setTemperature(parseFloat(e.target.value))}
@@ -578,7 +645,7 @@ const generate = async () => {
           style={{ padding: 18, fontSize: 12, letterSpacing: 4, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", width: "100%", cursor: loading || !topic.trim() ? "not-allowed" : "pointer", background: loading || !topic.trim() ? "#111" : C, color: loading || !topic.trim() ? "#333" : "#000", border: "none", transition: "all 0.2s" }}
         >
           {loading
-            ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>◌</span>WRITING BARS...</span>
+            ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>◌</span>{loadingMsg}</span>
             : "🎤  GENERATE LYRICS"}
         </button>
 
