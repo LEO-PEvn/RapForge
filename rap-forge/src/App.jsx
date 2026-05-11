@@ -391,7 +391,7 @@ const generate = async () => {
   setError("");
   setProfileOpen(false);
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch("/api/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -404,7 +404,7 @@ const generate = async () => {
       }),
     });
     const data = await res.json();
-    const text = data.choices[0].message.content;
+    const text = data.content[0].text;
     if (!text) throw new Error("Empty response");
     setLyrics(text);
     setTimeout(() => lyricsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
