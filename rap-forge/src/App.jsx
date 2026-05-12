@@ -350,6 +350,68 @@ RULES:
 OUTPUT: Lyrics ONLY. No preamble. No commentary. No explanations.`;
 }
 
+function buildCompletionPrompt({ artist, topic, language, vibe, startingLyrics }) {
+  const vibeLabel = vibe.replace(/^\S+\s/, "");
+  const songRefs = artist.referenceSongs
+    .map((s) => `  • "${s.title}" (${s.bpm} BPM) — ${s.note}`)
+    .join("\n");
+  const styleEx = artist.styleExamples
+    .map((ex, i) => `  [${i + 1}] ${ex}`)
+    .join("\n\n");
+  const topicLabel = topic.trim() ? `about: "${topic}"` : "based on the tone of the provided lyrics";
+
+  return `You are a world-class lyricist and ghostwriter with deep knowledge of ${artist.name}'s artistry.
+
+══════════════════════════════════════════════
+ARTIST DNA: ${artist.name.toUpperCase()} ${artist.flag}
+══════════════════════════════════════════════
+Origin: ${artist.origin} | Genre: ${artist.genre.join(", ")}
+BPM: ${artist.typicalBpm} avg (range ${artist.bpmRange.min}–${artist.bpmRange.max})
+Flow: ${artist.flowType}
+Rhyme scheme: ${artist.rhymeScheme}
+Delivery: ${artist.deliveryStyle}
+Core themes: ${artist.coreThemes.join(" · ")}
+Signature vocabulary: ${artist.signatureWords.join(", ")}
+Song structure: ${artist.songStructure}
+Hook style: ${artist.hookStyle}
+Verse length: ${artist.verseLength}
+Literary devices: ${artist.literaryDevices.join(", ")}
+
+Reference songs (BPM & structure):
+${songRefs}
+
+Specific writing directives:
+${artist.promptContext}
+
+══════════════════════════════════════════════
+STYLE INSPIRATION — SPIRIT NOT SOURCE
+These original bars are written IN THE SPIRIT of ${artist.name}.
+Study the cadence, imagery, word choices, and emotional temperature.
+Write with this exact energy. Never reproduce these lines.
+══════════════════════════════════════════════
+${styleEx}
+
+══════════════════════════════════════════════
+YOUR TASK
+══════════════════════════════════════════════
+Continue the lyrics below in the style of ${artist.name}.
+${topicLabel}
+Energy / Vibe: ${vibeLabel}
+
+RULES:
+1. Continue from the provided text without repeating it.
+2. Match the artist's structure and emotional tone.
+3. Preserve the language: ${language}.
+4. Keep the completion natural and lyrical, with clear sections like [Verse 1], [Hook], etc.
+5. Output lyrics ONLY. No preamble. No commentary. No explanations.
+
+UNFINISHED LYRICS:
+${startingLyrics.trim()}
+
+CONTINUE:
+`;
+}
+
 function getArtistMeta(a) {
   return `${a.typicalBpm} BPM · ${a.genre[0]} · ${a.origin}`;
 }
@@ -369,6 +431,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem("rapforge_favorites") || "[]"));
   const [mode, setMode] = useState("quick");
+  const [startingLyrics, setStartingLyrics] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("WRITING BARS...");
@@ -379,6 +442,7 @@ export default function App() {
   const [editLoading, setEditLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const lyricsRef = useRef(null);
+  const canGenerate = mode === "complete" ? startingLyrics.trim() : topic.trim();
 
   const C = "#ff3c00";
   const list = tab === "FR" ? ARTISTS_FRENCH : ARTISTS_INTERNATIONAL;
@@ -408,7 +472,7 @@ export default function App() {
     localStorage.setItem("rapforge_favorites", JSON.stringify(updated));
   };
   const generate = async () => {
-  if (!topic.trim()) return;
+  if (!canGenerate) return;
   setLoading(true);
   setLyrics("");
   setError("");
@@ -430,6 +494,25 @@ export default function App() {
       const text = data.content[0].text;
       if (!text) throw new Error("Empty response");
       setLyrics(text);
+      saveToHistory(text);
+    } else if (mode === "complete") {
+      // COMPLETE MODE — continue user lyrics
+      setLoadingMsg("🔧 CONTINUING LYRICS..."); await sleep(50);
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 1400,
+          temperature: temperature,
+          messages: [{ role: "user", content: buildCompletionPrompt({ artist, topic, language, vibe, startingLyrics }) }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content[0].text;
+      if (!text) throw new Error("Empty response");
+      setLyrics(text);
+      saveToHistory(text);
     } else {
       // ADVANCED MODE — two calls
       setLoadingMsg("🎯 BUILDING CONCEPT..."); await sleep(50);// Step 1: Generate concept outline
@@ -484,7 +567,8 @@ You are a professional rap editor. Identify the 3 weakest bars (generic, cliché
       });
       const finalData = await step3.json();
       const finalText = finalData.content[0].text;
-      setLyrics(finalText || text); saveToHistory(finalText || text);
+      setLyrics(finalText || text);
+      saveToHistory(finalText || text);
     }
     setTimeout(() => lyricsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   } catch {
@@ -713,12 +797,28 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         {/* 04 — MODE */}
         <div style={{ marginBottom: 28 }}>
           <label style={lbl}>04 — Generation Mode</label>
-          <div className="mode-row" style={{ display: "flex", gap: 12 }}>
-            <button onClick={() => setMode("quick")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "quick" ? highlightBg : panel, color: mode === "quick" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
-            <button onClick={() => setMode("advanced")} style={{ flex: 1, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "advanced" ? highlightBg : panel, color: mode === "advanced" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
+          <div style={{ fontSize: 10, color: C, letterSpacing: 2, marginBottom: 8 }}>NEW — Complete My Lyrics: write a first bar or paste unfinished lyrics and let the AI continue.</div>
+          <div className="mode-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={() => setMode("quick")} style={{ flex: 1, minWidth: 120, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "quick" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "quick" ? highlightBg : panel, color: mode === "quick" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "quick" ? 700 : 400 }}>⚡ Quick</button>
+            <button onClick={() => setMode("advanced")} style={{ flex: 1, minWidth: 120, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "advanced" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "advanced" ? highlightBg : panel, color: mode === "advanced" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "advanced" ? 700 : 400 }}>🎯 Advanced</button>
+            <button onClick={() => setMode("complete")} style={{ flex: 1, minWidth: 120, padding: "14px", fontSize: 11, letterSpacing: 3, fontFamily: "inherit", cursor: "pointer", border: mode === "complete" ? `1px solid ${C}` : `1px solid ${border}`, background: mode === "complete" ? highlightBg : panel, color: mode === "complete" ? highlightText : softText, textTransform: "uppercase", fontWeight: mode === "complete" ? 700 : 400 }}>✍️ Complete</button>
           </div>
           {mode === "advanced" && <div style={{ fontSize: 10, color: softText, letterSpacing: 1, marginTop: 8 }}>Two-step generation — concept outline first, then lyrics. Slower but more coherent.</div>}
+          {mode === "complete" && <div style={{ fontSize: 10, color: softText, letterSpacing: 1, marginTop: 8 }}>Write a first bar or paste unfinished lyrics — AI will continue the verse from there.</div>}
         </div>
+
+        {mode === "complete" && (
+          <div style={{ marginBottom: 28 }}>
+            <label style={lbl}>05 — Start / Unfinished Lyrics</label>
+            <textarea
+              rows={6}
+              value={startingLyrics}
+              onChange={(e) => setStartingLyrics(e.target.value)}
+              placeholder="Write your first bar here, or paste unfinished lyrics for the AI to continue..."
+              style={{ width: "100%", minHeight: 140, background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "16px", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical", letterSpacing: 0.3 }}
+            />
+          </div>
+        )}
 
 
         {/* 04 — TEMPERATURE */}
@@ -743,8 +843,8 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
         {/* GENERATE BUTTON */}
         <button
           onClick={generate}
-          disabled={loading || !topic.trim()}
-          style={{ padding: 18, fontSize: 12, letterSpacing: 4, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", width: "100%", cursor: loading || !topic.trim() ? "not-allowed" : "pointer", background: loading || !topic.trim() ? (darkMode ? "#111" : "#ddd") : C, color: loading || !topic.trim() ? (darkMode ? "#333" : "#666") : "#000", border: "none", transition: "all 0.2s" }}
+          disabled={loading || !canGenerate}
+          style={{ padding: 18, fontSize: 12, letterSpacing: 4, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", width: "100%", cursor: loading || !canGenerate ? "not-allowed" : "pointer", background: loading || !canGenerate ? (darkMode ? "#111" : "#ddd") : C, color: loading || !canGenerate ? (darkMode ? "#333" : "#666") : "#000", border: "none", transition: "all 0.2s" }}
         >
           {loading
             ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>◌</span>{loadingMsg}</span>
