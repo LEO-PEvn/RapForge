@@ -316,6 +316,24 @@ Hook style: ${artist.hookStyle}
 Verse length: ${artist.verseLength}
 Literary devices: ${artist.literaryDevices.join(", ")}
 
+NARRATIVE THREADING (critical rule):
+Lines must talk to each other and build meaning together.
+Use this 3-bar micro-story structure throughout the verse:
+- Bar 1: Plant an image, object, or feeling (specific and concrete)
+- Bar 2: Develop or transform that same image
+- Bar 3: Pay it off with a surprising or emotional conclusion
+Examples of what TO DO:
+"On inventait des constellations dans l'odeur du café brulé,
+Ce soir-là, t'as nommé une étoile avec mon prénom,
+Maintenant cette étoile, je peux plus la regarder sans pleurer."
+Examples of what NOT TO DO:
+Writing consecutive lines that introduce completely new and unrelated images with no connection to the previous line.
+Apply this threading rule across the entire song:
+- Within each verse (micro threads of 2-3 bars)
+- Between verse and hook (the hook should pay off what the verse planted)
+- Between verse 1 and verse 2 (verse 2 should echo or contrast verse 1's images)
+This rule applies to ALL languages and ALL artists.
+
 Reference songs (BPM & structure):
 ${songRefs}
 
