@@ -301,6 +301,19 @@ function buildPrompt({ artist, topic, language, vibe }) {
     .join("\n\n");
   return `You are a world-class lyricist and ghostwriter with deep knowledge of ${artist.name}'s artistry.
 
+RHYME FIRST (non-negotiable, do this before writing anything):
+Before writing a single bar, choose your rhyme pairs for the entire song:
+- Verse 1: 4 rhyme pairs (AABB — bar 1 rhymes with bar 2, bar 3 rhymes with bar 4)
+- Verse 2: 4 rhyme pairs (ABAB — bar 1 rhymes with bar 3, bar 2 rhymes with bar 4)
+- Hook: 2 rhyme pairs
+- Choose end words that are BOTH sonically strong AND carry real imagery
+- Write these rhyme pairs internally first, then build every bar around them
+
+The rest of the song — the threading, the imagery, the human emotion — 
+stays exactly as it is. Rhyme is the skeleton. Everything else is the flesh.
+Never sacrifice an image for a weak rhyme word.
+Find words that do both jobs simultaneously.
+
 ══════════════════════════════════════════════
 ARTIST DNA: ${artist.name.toUpperCase()} ${artist.flag}
 ══════════════════════════════════════════════
@@ -440,7 +453,7 @@ RULES:
 7. Use a clear end-of-verse rhyme pattern where appropriate, such as AABB, ABAB, ABBA, AABCCB, ABCABC, or ABABCDCD — but never let the rhyme shape sacrifice lyrical depth.
 8. Hook rules: minimum 2 lines, maximum 4 lines. Must be immediately memorable and singable. Emotional peak of the song.
 9. Keep style natural and idiomatic in ${language}
-10. Format clearly: [Verse 1], [Hook], [Verse 2], etc.
+10. Format clearly: use section headers exactly like [Verse 1], [Hook], [Verse 2], etc. Do NOT add line numbers or numeric prefixes to individual lines or to section headers (for example, avoid "1.", "Line 1", or numbering each lyric line). Each section header must be its own standalone title on a single line.
 11. Final bar must land hard — a revelation, punchline, or gut-punch.
 12. The style examples are inspiration ONLY — write entirely original bars
 
@@ -504,7 +517,8 @@ RULES:
 4. Write so each bar flows naturally when spoken aloud at ${artist.typicalBpm} BPM. Prioritize musicality and natural speech rhythm over syllable counting. Each bar should feel comfortable to rap — not too rushed, not too slow.
 5. Use end-of-verse rhyme patterns where appropriate, such as AABB, ABAB, ABBA, AAAA, AABCCB, ABCABC, or ABABCDCD — but keep lyrical depth and narrative texture first.
 6. Hook rules: minimum 2 lines, maximum 4 lines. Must be immediately memorable and singable. Emotional peak of the song.
-7. Infuse the continuation with vivid, sexy, and lyrical imagery; avoid stiffness and mechanical phrasing.
+7. Format clearly: use section headers exactly like [Verse 1], [Hook], [Verse 2], etc. Do NOT add line numbers or numeric prefixes to individual lines or to section headers. Each section header must be its own standalone title on a single line.
+8. Infuse the continuation with vivid, sexy, and lyrical imagery; avoid stiffness and mechanical phrasing.
 8. Keep the completion natural and lyrical, with clear sections like [Verse 1], [Hook], etc.
 9. Output lyrics ONLY. No preamble. No commentary. No explanations.
 
