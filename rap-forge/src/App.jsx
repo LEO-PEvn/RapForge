@@ -299,7 +299,6 @@ function buildPrompt({ artist, topic, language, vibe }) {
   const styleEx = artist.styleExamples
     .map((ex, i) => `  [${i + 1}] ${ex}`)
     .join("\n\n");
-
   return `You are a world-class lyricist and ghostwriter with deep knowledge of ${artist.name}'s artistry.
 
 ══════════════════════════════════════════════
@@ -322,6 +321,8 @@ ${songRefs}
 
 Specific writing directives:
 ${artist.promptContext}
+Write so each bar flows naturally when spoken aloud at ${artist.typicalBpm} BPM. Prioritize musicality and natural speech rhythm over syllable counting. Each bar should feel comfortable to rap — not too rushed, not too slow.
+FORBIDDEN CLICHÉS: never use generic closing lines like 'œuvre d'art éternelle', 'survivre', 'boussole', 'tempête de la vie', 'à travers les épreuves'. End with something unexpected and specific.
 
 ══════════════════════════════════════════════
 STYLE INSPIRATION — SPIRIT NOT SOURCE
@@ -340,12 +341,16 @@ Energy / Vibe: ${vibeLabel}
 RULES:
 1. 2–3 verses + hook/chorus — strictly follow ${artist.name}'s structure and verse length
 2. The style examples above are your compass — match that exact cadence, vocabulary, and imagery
-3. Every bar must feel like it breathes at ${artist.typicalBpm} BPM
-4. Use the listed literary devices — zero generic rap clichés
-5. Keep style natural and idiomatic in ${language}
-6. Format clearly: [Verse 1], [Hook], [Verse 2], etc.
-7. Final bar must land hard — a revelation, punchline, or gut-punch
-8. The style examples are inspiration ONLY — write entirely original bars
+3. Every bar must feel comfortable at ${artist.typicalBpm} BPM when spoken aloud.
+4. Use the listed literary devices — zero generic rap clichés.
+5. Keep the lyric fully in ${language}: do not code-switch or insert words from another language.
+6. Infuse every line with vivid, evocative, sexy imagery, deep texture, and a sense of history; avoid mechanical or robotic phrasing.
+7. Use a clear end-of-verse rhyme pattern where appropriate, such as AABB, ABAB, ABBA, AABCCB, ABCABC, or ABABCDCD — but never let the rhyme shape sacrifice lyrical depth.
+8. Hook rules: minimum 2 lines, maximum 4 lines. Must be immediately memorable and singable. Emotional peak of the song.
+9. Keep style natural and idiomatic in ${language}
+10. Format clearly: [Verse 1], [Hook], [Verse 2], etc.
+11. Final bar must land hard — a revelation, punchline, or gut-punch.
+12. The style examples are inspiration ONLY — write entirely original bars
 
 OUTPUT: Lyrics ONLY. No preamble. No commentary. No explanations.`;
 }
@@ -382,6 +387,8 @@ ${songRefs}
 
 Specific writing directives:
 ${artist.promptContext}
+Write so each bar flows naturally when spoken aloud at ${artist.typicalBpm} BPM. Prioritize musicality and natural speech rhythm over syllable counting. Each bar should feel comfortable to rap — not too rushed, not too slow.
+FORBIDDEN CLICHÉS: never use generic closing lines like 'œuvre d'art éternelle', 'survivre', 'boussole', 'tempête de la vie', 'à travers les épreuves'. End with something unexpected and specific.
 
 ══════════════════════════════════════════════
 STYLE INSPIRATION — SPIRIT NOT SOURCE
@@ -401,9 +408,13 @@ Energy / Vibe: ${vibeLabel}
 RULES:
 1. Continue from the provided text without repeating it.
 2. Match the artist's structure and emotional tone.
-3. Preserve the language: ${language}.
-4. Keep the completion natural and lyrical, with clear sections like [Verse 1], [Hook], etc.
-5. Output lyrics ONLY. No preamble. No commentary. No explanations.
+3. Keep the continuation fully in ${language}; do not code-switch or insert words from another language.
+4. Write so each bar flows naturally when spoken aloud at ${artist.typicalBpm} BPM. Prioritize musicality and natural speech rhythm over syllable counting. Each bar should feel comfortable to rap — not too rushed, not too slow.
+5. Use end-of-verse rhyme patterns where appropriate, such as AABB, ABAB, ABBA, AAAA, AABCCB, ABCABC, or ABABCDCD — but keep lyrical depth and narrative texture first.
+6. Hook rules: minimum 2 lines, maximum 4 lines. Must be immediately memorable and singable. Emotional peak of the song.
+7. Infuse the continuation with vivid, sexy, and lyrical imagery; avoid stiffness and mechanical phrasing.
+8. Keep the completion natural and lyrical, with clear sections like [Verse 1], [Hook], etc.
+9. Output lyrics ONLY. No preamble. No commentary. No explanations.
 
 UNFINISHED LYRICS:
 ${startingLyrics.trim()}
@@ -416,7 +427,6 @@ function getArtistMeta(a) {
   return `${a.typicalBpm} BPM · ${a.genre[0]} · ${a.origin}`;
 }
 
-// ─────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────
 export default function App() {
