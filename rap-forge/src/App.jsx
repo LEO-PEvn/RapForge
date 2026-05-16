@@ -334,6 +334,38 @@ Apply this threading rule across the entire song:
 - Between verse 1 and verse 2 (verse 2 should echo or contrast verse 1's images)
 This rule applies to ALL languages and ALL artists.
 
+SONIC ARCHITECTURE (critical rule):
+Do not write lines then search for rhymes afterward.
+Instead, follow this professional songwriter process:
+
+Step 1 — Choose a rhyme family first.
+Pick 3-4 words that share a sound AND carry strong imagery.
+Example: luisant / bruisant / frémissant / éblouissant
+Example: mémoire / miroir / pouvoir / espoir
+Example: brûle / bascule / recule / calcule
+
+Step 2 — Build the image AROUND those sounds.
+The end word must be chosen because it is both 
+visually powerful AND creates a sonic echo.
+Never choose a rhyme word that weakens the image.
+Never choose an image word that breaks the sonic pattern.
+
+Step 3 — The rhyme pattern must be consistent throughout.
+Minimum AABB per verse (every 2 bars rhyme).
+The listener's ear must be able to anticipate the next rhyme.
+Vary the pattern between verses for musicality:
+Verse 1: AABB
+Verse 2: ABAB
+Verse 3: free but with internal rhymes
+
+The tension between sound and meaning IS the art.
+A perfect bar sounds inevitable — like no other word could end that line.
+
+This rule applies to ALL languages and ALL artists.
+For French artists especially: exploit the richness of French 
+phonetics — nasal sounds (an/en/on), open vowels (air/ère/être),
+and the music of the language itself.
+
 Reference songs (BPM & structure):
 ${songRefs}
 
