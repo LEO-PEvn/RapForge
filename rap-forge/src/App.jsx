@@ -340,31 +340,73 @@ Instead, follow this professional songwriter process:
 
 Step 1 — Choose a rhyme family first.
 Pick 3-4 words that share a sound AND carry strong imagery.
-Example: luisant / bruisant / frémissant / éblouissant
-Example: mémoire / miroir / pouvoir / espoir
-Example: brûle / bascule / recule / calcule
+Choose words native to the language being written in.
+The rhyme family must feel natural when spoken aloud in that language.
 
 Step 2 — Build the image AROUND those sounds.
-The end word must be chosen because it is both 
+The end word must be chosen because it is both
 visually powerful AND creates a sonic echo.
 Never choose a rhyme word that weakens the image.
 Never choose an image word that breaks the sonic pattern.
 
-Step 3 — The rhyme pattern must be consistent throughout.
-Minimum AABB per verse (every 2 bars rhyme).
-The listener's ear must be able to anticipate the next rhyme.
-Vary the pattern between verses for musicality:
-Verse 1: AABB
-Verse 2: ABAB
-Verse 3: free but with internal rhymes
+Step 3 — Consistent rhyme pattern throughout.
+Minimum AABB per verse — every 2 bars must share an end rhyme.
+Vary between verses: Verse 1 AABB, Verse 2 ABAB, Verse 3 internal rhymes.
+The listener's ear must be able to predict and feel the rhyme landing.
+
+EXAMPLES OF SONIC ARCHITECTURE DONE RIGHT:
+
+[French — AABB rhyme scheme, rhyme family: cuir/venir + mémoire/espoir]
+"T'as laissé ton parfum sur mon blouson en cuir,
+Une odeur désertique que je n'arrive pas à fuir,
+Je garde ce blouson comme on garde une mémoire,
+Un musée personnel, mon seul territoire d'espoir."
+→ cuir/fuir rhyme ✅ — mémoire/espoir rhyme ✅
+→ One object (perfume/jacket) threads all 4 bars.
+→ The rhyme words (fuir, espoir) carry their own emotional weight.
+
+[French — ABAB rhyme scheme, rhyme family: carnet/jazz + froid/toi]
+"J'ai retrouvé ton numéro dans un vieux carnet,
+L'encre a pâli mais pas le souvenir du froid,
+Un 06 qui sonne faux comme une fausse note de jazz,
+Le silence qui reste — c'est tout ce qu'il reste de toi."
+→ carnet/jazz ✅ (assonance) — froid/toi ✅
+→ Starts concrete (phone number), ends emotional (silence of you).
+
+[French — AABB, rhyme family: étoiles/voiles + souvient/revient]
+"On a cru qu'on était éternels, brillants comme des étoiles,
+Deux navigateurs perdus qui couraient sous les mêmes voiles,
+Sauf que les étoiles meurent, et personne ne s'en souvient,
+Sauf les poètes en exil qui attendent que tout revient."
+→ étoiles/voiles rhyme ✅ — souvient/revient rhyme ✅
+→ Universal image subverted, ends with unexpected specific group.
+
+[English — AABB, rhyme family: coast/ghost + most/host]
+"You left without a trace, like a city on a forgotten coast,
+I became the kind of man who hates the mornings most,
+My memories of us feel like playing host,
+To a party that keeps running for a long-departed ghost."
+→ coast/most ✅ (near rhyme) — host/ghost ✅
+→ One metaphor (abandoned party) threads all 4 bars.
+
+WHAT THESE EXAMPLES HAVE IN COMMON:
+- End words RHYME — the listener hears the pattern clearly
+- Each bar builds on the previous one — no disconnected images
+- The rhyme word is chosen FIRST, then the image is built around it
+- The final bar lands somewhere unexpected but earned
+- No line could be removed without breaking the meaning
+
+WHAT NOT TO DO:
+- Writing lines where end words share NO sonic connection
+- Choosing a rhyme word that weakens the image
+- Forcing a rhyme with a filler word that adds no meaning
+- Ending with a generic philosophical conclusion
+- Using clichés as shortcuts when the rhyme is hard to find
 
 The tension between sound and meaning IS the art.
 A perfect bar sounds inevitable — like no other word could end that line.
-
-This rule applies to ALL languages and ALL artists.
-For French artists especially: exploit the richness of French 
-phonetics — nasal sounds (an/en/on), open vowels (air/ère/être),
-and the music of the language itself.
+Exploit the full phonetic richness of ${language}.
+This rule applies to ALL languages equally.
 
 Reference songs (BPM & structure):
 ${songRefs}
