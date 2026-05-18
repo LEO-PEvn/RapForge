@@ -637,15 +637,37 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
-          max_tokens: 400,
+          max_tokens: 600,
           temperature: 0.7,
-          messages: [{ role: "user", content: `You are a rap songwriter. For the topic "${topic}" in the style of ${artist.name}, write a brief concept outline (4-6 lines max):
-- Main theme and emotional arc
-- Key metaphor or image
-- Hook concept (one line)
-- Verse 1 focus
-- Verse 2 focus
-Output ONLY the outline, no preamble.` }],
+          messages: [{ role: "user", content: `You are a professional rap songwriter preparing to write a song.
+Topic: "${topic}"
+Artist style: ${artist.name}
+Language: ${language}
+Vibe: ${vibe}
+
+Before writing any lyrics, create your internal songwriting plan.
+Output ONLY this plan, nothing else:
+
+RHYME MAP:
+- Verse 1 end words (AABB): [pair 1: word_A / word_B], [pair 2: word_C / word_D], [pair 3: word_E / word_F], [pair 4: word_G / word_H]
+- Verse 2 end words (ABAB): [pair 1: word_A / word_C], [pair 2: word_B / word_D], [pair 3: word_E / word_G], [pair 4: word_F / word_H]
+- Hook end words: [pair 1: word_A / word_B], [pair 2: word_C / word_D]
+- Outro end words: [pair 1: word_A / word_B]
+Every end word must carry strong imagery AND rhyme with its pair.
+Choose words in ${language}.
+
+THREAD MAP:
+- Central object 1: [specific sensory object] — appears in Verse 1 bar X, transforms in Verse 2 bar X, pays off in Outro
+- Central object 2: [specific sensory object] — planted in Verse 1, echoed in Hook
+- Central object 3: [specific sensory object] — exclusive to Verse 2, referenced in Outro
+
+EMOTIONAL ARC:
+- Verse 1: [one sentence — what the narrator feels at the start]
+- Hook: [one sentence — the emotional peak]
+- Verse 2: [one sentence — how emotion shifts or deepens]
+- Outro: [one sentence — the final unexpected truth]
+
+This plan is your contract. Every bar must follow it exactly.` }],
         }),
       });
       const outline = await step1.json();
@@ -659,7 +681,7 @@ Output ONLY the outline, no preamble.` }],
           model: "llama-3.3-70b-versatile",
           max_tokens: 1400,
           temperature: temperature,
-          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) + `\n\nFOLLOW THIS CONCEPT OUTLINE:\n${outlineText}` }],
+          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) + `\n\nFOLLOW THIS SONGWRITING PLAN EXACTLY — it is your contract:\n${outlineText}\n\nEvery bar must use the rhyme pairs from the RHYME MAP.\nEvery thread object must appear exactly where the THREAD MAP specifies.\nThe emotional arc must be felt in every section.\nIf a bar breaks the plan — rewrite the bar, never the plan.` }],
         }),
       });
       const data = await step2.json();
