@@ -642,6 +642,7 @@ export default function App() {
           messages: [{ role: "user", content: `You are a professional rap songwriter preparing to write a song.
 Topic: "${topic}"
 Artist style: ${artist.name}
+Origin: ${artist.origin}
 Language: ${language}
 Vibe: ${vibe}
 
