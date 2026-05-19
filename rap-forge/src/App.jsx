@@ -291,7 +291,7 @@ const VIBES = [
 // ─────────────────────────────────────────────────────────────────
 // PROMPT BUILDER
 // ─────────────────────────────────────────────────────────────────
-function buildPrompt({ artist, topic, language, vibe }) {
+function buildPrompt({ artist, topic, guidance, language, vibe }) {
   const vibeLabel = vibe.replace(/^\S+\s/, "");
   const songRefs = artist.referenceSongs
     .map((s) => `  • "${s.title}" (${s.bpm} BPM) — ${s.note}`)
@@ -442,6 +442,7 @@ YOUR TASK
 ══════════════════════════════════════════════
 Write original lyrics in ${language} about: "${topic}"
 Energy / Vibe: ${vibeLabel}
+${guidance.trim() ? `\nAdditional Context/Guidance from the artist:\n"${guidance}"\n` : ""}
 
 RULES:
 1. 2–3 verses + hook/chorus — strictly follow ${artist.name}'s structure and verse length
@@ -460,7 +461,7 @@ RULES:
 OUTPUT: Lyrics ONLY. No preamble. No commentary. No explanations.`;
 }
 
-function buildCompletionPrompt({ artist, topic, language, vibe, startingLyrics }) {
+function buildCompletionPrompt({ artist, topic, guidance, language, vibe, startingLyrics }) {
   const vibeLabel = vibe.replace(/^\S+\s/, "");
   const songRefs = artist.referenceSongs
     .map((s) => `  • "${s.title}" (${s.bpm} BPM) — ${s.note}`)
@@ -507,6 +508,7 @@ ${styleEx}
 YOUR TASK
 ══════════════════════════════════════════════
 Continue the lyrics below in the style of ${artist.name}.
+${guidance.trim() ? `\nAdditional Context/Guidance from the artist:\n"${guidance}"\n` : ""}
 ${topicLabel}
 Energy / Vibe: ${vibeLabel}
 
@@ -548,6 +550,9 @@ export default function App() {
   const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem("rapforge_favorites") || "[]"));
   const [mode, setMode] = useState("quick");
   const [startingLyrics, setStartingLyrics] = useState("");
+  const [guidance, setGuidance] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [revising, setRevising] = useState(false);
   const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("WRITING BARS...");
@@ -581,6 +586,37 @@ export default function App() {
     setHistory(updated);
     localStorage.setItem("rapforge_history", JSON.stringify(updated));
   };
+  const reviseLyrics = async () => {
+    if (!feedback.trim() || !lyrics) return;
+    setRevising(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 1400,
+          temperature: temperature,
+          messages: [{
+            role: "user",
+            content: `You are a professional ghostwriter writing in the style of ${artist.name}.\n\nHere are the current lyrics you generated:\n\n${lyrics}\n\nThe artist has provided the following feedback to tweak and modify the text:\n"${feedback}"\n\nRewrite the lyrics to incorporate this exact feedback. Keep the parts that work, but change what is requested. Ensure it still flows perfectly at ${artist.typicalBpm} BPM. Output ONLY the new lyrics.`
+          }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content[0].text;
+      if (!text) throw new Error("Empty response");
+
+      setLyrics(text);
+      saveToHistory(text);
+      setFeedback("");
+    } catch (err) {
+      setError("Revision failed — check your connection and try again.");
+    }
+    setRevising(false);
+  };
   const toggleFavorite = (line) => {
     const exists = favorites.includes(line);
     const updated = exists ? favorites.filter(f => f !== line) : [...favorites, line];
@@ -603,7 +639,7 @@ export default function App() {
           model: "llama-3.3-70b-versatile",
           max_tokens: 1400,
           temperature: temperature,
-          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) }],
+          messages: [{ role: "user", content: buildPrompt({ artist, topic, guidance, language, vibe }) }],
         }),
       });
       const data = await res.json();
@@ -621,7 +657,7 @@ export default function App() {
           model: "llama-3.3-70b-versatile",
           max_tokens: 1400,
           temperature: temperature,
-          messages: [{ role: "user", content: buildCompletionPrompt({ artist, topic, language, vibe, startingLyrics }) }],
+          messages: [{ role: "user", content: buildCompletionPrompt({ artist, topic, guidance, language, vibe, startingLyrics }) }],
         }),
       });
       const data = await res.json();
@@ -645,7 +681,7 @@ Artist style: ${artist.name}
 Origin: ${artist.origin}
 Language: ${language}
 Vibe: ${vibe}
-
+${guidance.trim() ? `\nAdditional Context/Guidance from the artist:\n"${guidance}"\n` : ""}
 Before writing any lyrics, create your internal songwriting plan.
 Output ONLY this plan, nothing else:
 
@@ -682,7 +718,7 @@ This plan is your contract. Every bar must follow it exactly.` }],
           model: "llama-3.3-70b-versatile",
           max_tokens: 1400,
           temperature: temperature,
-          messages: [{ role: "user", content: buildPrompt({ artist, topic, language, vibe }) + `\n\nFOLLOW THIS SONGWRITING PLAN EXACTLY — it is your contract:\n${outlineText}\n\nEvery bar must use the rhyme pairs from the RHYME MAP.\nEvery thread object must appear exactly where the THREAD MAP specifies.\nThe emotional arc must be felt in every section.\nIf a bar breaks the plan — rewrite the bar, never the plan.` }],
+          messages: [{ role: "user", content: buildPrompt({ artist, topic, guidance, language, vibe }) + `\n\nFOLLOW THIS SONGWRITING PLAN EXACTLY — it is your contract:\n${outlineText}\n\nEvery bar must use the rhyme pairs from the RHYME MAP.\nEvery thread object must appear exactly where the THREAD MAP specifies.\nThe emotional arc must be felt in every section.\nIf a bar breaks the plan — rewrite the bar, never the plan.` }],
         }),
       });
       const data = await step2.json();
@@ -846,6 +882,18 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
             onKeyDown={(e) => e.key === "Enter" && generate()}
             placeholder="travel and never come back, heartbreak, rising from nothing..."
             style={{ width: "100%", background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "14px 16px", fontSize: 14, fontFamily: "inherit", outline: "none", letterSpacing: 1 }}
+            onFocus={(e) => (e.target.style.borderColor = C)}
+            onBlur={(e) => (e.target.style.borderColor = border)}
+          />
+        </div>
+
+        <div style={{ marginBottom: 28 }}>
+          <label style={lbl}>01b — Deeper Context / Guidance (Optional)</label>
+          <textarea
+            value={guidance}
+            onChange={(e) => setGuidance(e.target.value)}
+            placeholder="Explain the deeper meaning, specific metaphors to use, or the story behind the song..."
+            style={{ width: "100%", background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "14px 16px", fontSize: 13, fontFamily: "inherit", outline: "none", minHeight: 80, resize: "vertical" }}
             onFocus={(e) => (e.target.style.borderColor = C)}
             onBlur={(e) => (e.target.style.borderColor = border)}
           />
@@ -1056,6 +1104,24 @@ Output ONLY the rewritten line${count > 1 ? "s, one per line, numbered 1. 2. 3."
                   );
                 })}
               </pre>
+              <div style={{ marginTop: 24, borderTop: `1px solid ${border}`, paddingTop: 24 }}>
+                <label style={lbl}>Modify & Refine (Feedback)</label>
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="e.g., Make the second verse more aggressive, change the hook to talk about a midnight drive..."
+                  style={{ width: "100%", background: inputBg, border: `1px solid ${border}`, color: textColor, padding: "14px 16px", fontSize: 13, fontFamily: "inherit", outline: "none", minHeight: 80, resize: "vertical", marginBottom: 12 }}
+                  onFocus={(e) => (e.target.style.borderColor = C)}
+                  onBlur={(e) => (e.target.style.borderColor = border)}
+                />
+                <button
+                  onClick={reviseLyrics}
+                  disabled={revising || !feedback.trim()}
+                  style={{ padding: "12px 24px", fontSize: 11, letterSpacing: 2, fontFamily: "inherit", fontWeight: 700, textTransform: "uppercase", cursor: revising || !feedback.trim() ? "not-allowed" : "pointer", background: revising || !feedback.trim() ? secondaryBg : C, color: revising || !feedback.trim() ? softText : "#000", border: `1px solid ${revising || !feedback.trim() ? border : C}`, transition: "all 0.2s" }}
+                >
+                  {revising ? "◌ REVISING..." : "✨ APPLY FEEDBACK"}
+                </button>
+              </div>
             </div>
           </div>
         )}
