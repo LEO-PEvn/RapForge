@@ -739,7 +739,7 @@ This plan is your contract. Every bar must follow it exactly.` }],
 
 ${text}
 
-You are a professional rap editor. Identify the 3 weakest bars (generic, cliché, or off-rhythm) and rewrite ONLY those bars to be more powerful, original and authentic to ${artist.name}'s style. Output the COMPLETE lyrics with the improvements integrated. No commentary, no explanations, just the final lyrics.` }],
+You are a professional rap editor. Identify the 3 weakest bars (generic, cliché, off-rhythm, or failing to adhere strictly to an AABB/ABAB rhyme scheme). Rewrite them to enforce strict sonic structure (relying heavily on slant rhymes, assonance, or multi-syllabic phrasing) while keeping the content powerful, original, and authentic to ${artist.name}'s style. Output the COMPLETE lyrics with the improvements integrated. No commentary, no explanations, just the final lyrics.` }],
         }),
       });
       const finalData = await step3.json();
